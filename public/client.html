@@ -112,8 +112,6 @@
         //When jQuery is ready
         $(function() {
 
-            var conf_el = $("#confirmation").hide();
-
             var options = {
                 fragment_size: 140
                 , send_interval: 200
@@ -156,7 +154,12 @@
                     console.log("Encrypted: " + meta.message);
                 }
 
-                $('#future').append("<p>" + meta.username + ": " + msg + "</p>");
+                if(msg==="Start pairing..."||msg==="initiating encryption...") {
+                    $('#future').append("<p>" + meta.username + ": " + msg + "</p>");
+                }else {
+                    $('#chat').append("<p>" + meta.username + ": " + msg + "</p>");
+                }
+
                 // encrypted === true, if the received msg was encrypted
                 // console.log("(optional) with receiveMsg attached meta data: " + meta)
             });
@@ -190,7 +193,8 @@
                     case 'trust':
                             debugger;
                         is_trust = data;
-                        conf_el.show();
+                        $('#encrypted').append("<p>" + "Identification verified... Chat secured!"+"</p>");
+                        smp.hide();
                         $("#form").show();
                         // smp completed
                         // check data (true|false) and update ui accordingly
@@ -268,9 +272,9 @@
                 //get and send msg
                 var message = $('#chat_input');
 
-                $('#future').append("<p>" + "Me: " +  message.val() +  "</p>");
+                $('#chat').append("<p>" + "Me: " +  message.val() +  "</p>");
                 buddy.sendMsg(message.val());
-                message.innerText = "";
+                message.val('');
             });
 
         });
@@ -302,11 +306,6 @@
               <input id="chat_input" type="text" placeholder='type your message here'>
               <input type="submit" value="Send">
           </form>
-
-
-
-          <div id = "confirmation">Identity is confirmed!</div>
-          <!---Create buttons for encrypted vs unencrypted--->
 
       </div>
   </div>
