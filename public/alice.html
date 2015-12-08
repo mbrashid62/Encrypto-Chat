@@ -42,7 +42,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
 
-        //OTR.
         var myKey = new DSA();
 
         //connect to server
@@ -53,6 +52,8 @@
 
         //When jQuery is ready
         $(function() {
+
+            var conf_el = $("#confirmation").hide();
 
             var options = {
                 fragment_size: 140
@@ -100,6 +101,7 @@
                     case 'trust':
                             debugger;
                         is_trust = data;
+                        conf_el.show();
                         // smp completed
                         // check data (true|false) and update ui accordingly
                         // act ("asked"|"answered") provides info one who initiated the smp
@@ -200,10 +202,11 @@
 </form>
 
 <button id = "smp_button">
-    My Button
+   Initiate SMP Protocol
 </button>
-<!---Create buttons for encrypted vs unencrypted--->
 
+<div id = "confirmation">Bob's identity is confirmed!</div>
+<!---Create buttons for encrypted vs unencrypted--->
 <script src="/socket.io/socket.io.js"></script>
 </body>
 
