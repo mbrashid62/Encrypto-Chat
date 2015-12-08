@@ -1,0 +1,21 @@
+{
+  "name": "encrypto-chat",
+  "description": "Encrypted Chat",
+  "main": "app.js",
+  "authors": [
+    "Bill Rashid <mohammad-rashid@uiowa.edu>"
+  ],
+  "license": "ISC",
+  "moduleType": [],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.4"
+  }
+}
