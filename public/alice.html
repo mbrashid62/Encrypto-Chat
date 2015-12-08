@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Alice Chat</title>
+    <!--<script src="scripts/test.js"></script>-->
+
+    <!-- Load dependencies -->
+    <script src="otr_dependencies/bigint.js"></script>
+    <script src="otr_dependencies/crypto.js"></script>
+    <script src="otr_dependencies/eventemitter.js"></script>
+
+    <!-- Load otr.js or otr.min.js -->
+    <script src="otr_dependencies/otr.min.js"></script>
+
+    <script>
+
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        h1{
+            text-align: center;
+            padding: 15px;
+        }
+        p{
+            font-size: 22px;
+            padding: 25px;
+        }
+        body { font: 13px Helvetica, Arial; }
+        form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+        form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+        form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+    </style>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+        //OTR.
+        var myKey = new DSA();
+
+        //connect to server
+        var socket = io.connect('http://localhost:4200');
+
+        var secret = "ghostbusters";
+        var is_trust = false;
+
+        //When jQuery is ready
+        $(function() {
+
+            var options = {
+                fragment_size: 140
+                , send_interval: 200
+                , priv: myKey
+            };
+
+
+
+            var buddy = new OTR(options);
+
+            buddy.on('io', function (msg, meta) {
+                console.log("message to send to buddy: " + msg)
+                socket.emit('messages', msg);
+            });
+
+            buddy.on('error', function (err, severity) {
+                if (severity === 'error')  // either 'error' or 'warn'
+                    console.error("error occurred: " + err)
+            });
+
+            buddy.on('ui', function (msg, encrypted, meta) {
+                console.log("Message to display to the user: " + msg);
+
+                if(encrypted){
+                    console.log("Encrypted: " + meta.message);
+                }
+
+                $('#future').append("<p>" + meta.username + ": " + msg + "</p>");
+                // encrypted === true, if the received msg was encrypted
+                // console.log("(optional) with receiveMsg attached meta data: " + meta)
+            });
+
+            buddy.on('smp', function (type, data, act) {
+
+
+                switch (type) {
+                    case 'question':
+                            debugger;
+                        buddy.smpSecret(secret);
+                        // call(data) some function with question?
+                        // return the user supplied data to
+                        // userA.smpSecret(secret)
+                        break
+                    case 'trust':
+                            debugger;
+                        is_trust = data;
+                        // smp completed
+                        // check data (true|false) and update ui accordingly
+                        // act ("asked"|"answered") provides info one who initiated the smp
+                        break
+                    case 'abort':
+                        is_trust = false;
+                    // smp was aborted. notify the user or update ui
+                    default:
+                        throw new Error('Unknown type.')
+                }
+            })
+
+
+            $("#smp_button").on('click', function(e){
+
+                buddy.smpSecret(secret);
+
+            });
+            buddy.on('status', function (state) {
+                switch (state) {
+                    case OTR.CONST.STATUS_AKE_SUCCESS:
+                        // sucessfully ake'd with buddy
+                        // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
+                        if(buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED){
+                            console.log("message is now encrypted");
+                            $("#encrypted").text("Now encrypted!");
+                        }
+                        break
+                    case OTR.CONST.STATUS_END_OTR:
+                        // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
+                        // inform the user that his correspondent has closed his end
+                        // of the private connection and the user should do the same
+                        break
+                }
+            });
+
+            buddy.REQUIRE_ENCRYPTION = true;
+            //buddy.sendMsg('My plaintext message to be encrypted.');
+
+
+            //on connect...
+            socket.on('connect', function(data) {
+                //socket.emit('join', 'Hello World from client');
+
+            });
+
+
+            //when msgs are received
+            socket.on('messages', function(data){
+                //populate p element with text
+
+                $('#chat').text(data);
+            });
+
+            //on broadcast...server sends message to all connected clients
+            socket.on('broad', function(data) {
+
+                buddy.receiveMsg(data.message, data);
+            });
+
+
+
+            //when client sends msg...
+            $('form').submit(function(e){
+
+                //prevents form from submitting
+                e.preventDefault();
+                //get and send msg
+                var message = $('#chat_input').val();
+
+                $('#future').append("<p>" + "Me: " +  message +  "</p>");
+                buddy.sendMsg(message);
+            });
+
+        });
+
+
+    </script>
+
+</head>
+
+<body>
+
+<h1>Hello World!</h1>
+
+<div id="future">
+
+</div>
+<p id = "chat">
+
+</p>
+
+<p id = "encrypted"></p>
+
+<form id="form" id="chat_form">
+    <input id="chat_input" type="text">
+    <input type="submit" value="Send">
+</form>
+
+<button id = "smp_button">
+    My Button
+</button>
+<!---Create buttons for encrypted vs unencrypted--->
+
+<script src="/socket.io/socket.io.js"></script>
+</body>
+
+</html>
