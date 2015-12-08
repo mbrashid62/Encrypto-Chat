@@ -42,7 +42,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
 
-        //OTR.
         var myKey = new DSA();
 
         //connect to server
@@ -55,6 +54,7 @@
         $(function() {
 
             var conf_el = $("#confirmation").hide();
+
             var options = {
                 fragment_size: 140
                 , send_interval: 200
@@ -205,8 +205,8 @@
     Initiate SMP Protocol
 </button>
 
-<div id = "confirmation">Alice's identity is confirmed!</div>
-
+<div id = "confirmation">Bob's identity is confirmed!</div>
+<!---Create buttons for encrypted vs unencrypted--->
 <script src="/socket.io/socket.io.js"></script>
 </body>
 

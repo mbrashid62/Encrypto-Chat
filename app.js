@@ -108,8 +108,6 @@ io.on('connection', function(client) {
 
     console.log('Client connected...');
 
-
-
     client_ids[num_connections] = client.id;
     num_connections++;
 
