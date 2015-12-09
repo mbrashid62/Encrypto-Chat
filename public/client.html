@@ -108,6 +108,8 @@
         var secret = "ghostbusters";
         var is_trust = false;
 
+        var is_encrypted = false;
+
         var username = "client";
         //When jQuery is ready
         $(function() {
@@ -122,11 +124,13 @@
 
             var smp = $("#smp_button");
             smp.hide();
-            secret = prompt("Enter connection secret:", "defaultSecretUiowa");
+            var exit = $("#exit");
+            exit.hide();
+            secret = prompt("Enter connection secret: ", "defaultSecretUiowa");
 
             // default name is 'Guest'
-            if (name === '') {
-                name = "defaultSecretUiowa";
+            if (secret === '') {
+                secrete = "defaultSecretUiowa";
             }
 
             username = prompt("Enter your username:", "client");
@@ -135,6 +139,7 @@
 
             var buddy = new OTR(options);
 
+            var question = "who are you going to call?";
 
 
             buddy.on('io', function (msg, meta) {
@@ -156,8 +161,18 @@
 
                 if(msg==="Start pairing..."||msg==="initiating encryption...") {
                     $('#future').append("<p>" + meta.username + ": " + msg + "</p>");
+                }else if(msg === "User has exited..."){
+                    $('#encrypted').append("<p>" + meta.username + ": " + msg + "</p>");
+                    $('#future').text('');
+                    is_encrypted = false;
+                    is_trust =false;
+                    $('#changesecret').show();
+                    $('#form').hide();
+
                 }else {
-                    $('#chat').append("<p>" + meta.username + ": " + msg + "</p>");
+                    if(is_trust&&is_encrypted) {
+                        $('#chat').append("<p>" + meta.username + ": " + msg + "</p>");
+                    }
                 }
 
                 // encrypted === true, if the received msg was encrypted
@@ -177,7 +192,7 @@
                 }
             });
 
-
+            var system =  $('#encrypted');
 
             buddy.on('smp', function (type, data, act) {
 
@@ -185,7 +200,8 @@
                 switch (type) {
                     case 'question':
                             debugger;
-                        buddy.smpSecret(secret);
+
+                        buddy.smpSecret(secret,question);
                         // call(data) some function with question?
                         // return the user supplied data to
                         // userA.smpSecret(secret)
@@ -193,17 +209,26 @@
                     case 'trust':
                             debugger;
                         is_trust = data;
-                        $('#encrypted').append("<p>" + "Identification verified... Chat secured!"+"</p>");
-                        smp.hide();
-                        $("#form").show();
+                            if(is_trust === true) {
+                                system.append("<p>" + "Identification verified... Chat secured!"+"</p>");
+                                smp.hide();
+                                $("#form").show();
+                                exit.show();
+                                $("#changesecret").hide();
+                            }else {
+                                system.append("<p>" + "Identification failure... Aborting...!"+"</p>");
+                                $("#form").show();
+                            }
                         // smp completed
                         // check data (true|false) and update ui accordingly
                         // act ("asked"|"answered") provides info one who initiated the smp
                         break;
                     case 'abort':
                         is_trust = false;
+
                     // smp was aborted. notify the user or update ui
                     default:
+                        system.append("<p>" + "smp abort!"+"</p>");
                         throw new Error('Unknown type.')
                 }
             });
@@ -217,6 +242,26 @@
 
             });
 
+            $('#changesecret').on('click', function(e){
+
+                secret = prompt("Re-enter connection secret: ", "defaultSecretUiowa");
+
+                // default name is 'Guest'
+                if (secret === '') {
+                    secrete = "defaultSecretUiowa";
+                }
+
+            });
+
+            exit.on('click', function(e){
+                $('#encrypted').text("Exited!");
+                buddy.sendMsg("User has exited...");
+                is_encrypted = false;
+                is_trust = false;
+                $('#chat').text('');
+                $('#future').text('');
+            });
+
             buddy.on('status', function (state) {
                 switch (state) {
                     case OTR.CONST.STATUS_AKE_SUCCESS:
@@ -225,15 +270,16 @@
                         if(buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED){
                             console.log("message is now encrypted");
                             $("#encrypted").text("Now encrypted!");
+                            exit.hide();
+                            is_encrypted = true;
                             smp.show();
                         }
-
-
                         break;
                     case OTR.CONST.STATUS_END_OTR:
                         // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
                         // inform the user that his correspondent has closed his end
                         // of the private connection and the user should do the same
+                        is_encrypted = false;
                         break;
                 }
             });
@@ -288,6 +334,15 @@
 
   <div class="wrapper">
       <strong><h1>Secret Agent Chat</h1></strong>
+      <div class = "pull-right" >
+          <button class = "btn btn-danger" id = "exit">
+              Exit
+          </button>
+      </div>
+      <button class = "btn btn-primary" id = "changesecret">
+          Change secret
+      </button>
+
       <div class = "container">
           <p id = "encrypted"></p>
           <div id="future">
