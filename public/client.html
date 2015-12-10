@@ -35,10 +35,12 @@
             margin-right:auto;
             background-color: skyblue;
         }
+
         h1{
             text-align: center;
             padding: 15px;
         }
+
         p{
             font-size: 22px;
         }
@@ -52,6 +54,8 @@
             font-size: x-large;
             font-family: cursive;
             font-weight: 600;
+            margin-left: 15px;
+            margin-right: 15px;
 
         }
         #chat {
@@ -71,6 +75,7 @@
             padding-left:50px;
             width:100%;
         }
+
 
         body { font: 13px Helvetica, Arial; }
         form {
@@ -109,9 +114,13 @@
         var is_trust = false;
 
         var is_encrypted = false;
-
+        var is_exited = false;
         var username = "client";
         //When jQuery is ready
+        $("#chat").onchange=function(){
+            $("#chat").scrollTop = this.scrollHeight;
+        };
+
         $(function() {
 
             var options = {
@@ -119,9 +128,6 @@
                 , send_interval: 200
                 , priv: myKey
             };
-
-            $("#form").hide();
-
             var smp = $("#smp_button");
             smp.hide();
             var exit = $("#exit");
@@ -130,7 +136,7 @@
 
             // default name is 'Guest'
             if (secret === '') {
-                secrete = "defaultSecretUiowa";
+                secret = "defaultSecretUiowa";
             }
 
             username = prompt("Enter your username:", "client");
@@ -159,15 +165,15 @@
                     console.log("Encrypted: " + meta.message);
                 }
 
-                if(msg==="Start pairing..."||msg==="initiating encryption...") {
+                if(msg==="Start pairing..."||msg==="Initiating encryption...") {
                     $('#future').append("<p>" + meta.username + ": " + msg + "</p>");
-                }else if(msg === "User has exited..."){
+                }else if(msg === "User has exited...Please restart for next chat!"){
                     $('#encrypted').append("<p>" + meta.username + ": " + msg + "</p>");
                     $('#future').text('');
                     is_encrypted = false;
                     is_trust =false;
-                    $('#changesecret').show();
-                    $('#form').hide();
+                    is_exited = true;
+
 
                 }else {
                     if(is_trust&&is_encrypted) {
@@ -180,6 +186,7 @@
             });
             debugger;
 
+            var system =  $('#encrypted');
             socket.emit('changeUsername', username);
 
 
@@ -187,12 +194,14 @@
             socket.on('init', function(msg) {
                 var num = parseInt(msg);
                 if(num===2) {
-                    $('#future').append("<p>" + "Me: initiating encryption..."+"</p>");
+                    $('#future').append("<p>" + "Me: Initiating encryption..."+"</p>");
                     buddy.sendMsg("initiating encryption...");
+                }else if(num ===1){
+                    $('#encrypted').text("Wait for another client...");
                 }
             });
 
-            var system =  $('#encrypted');
+
 
             buddy.on('smp', function (type, data, act) {
 
@@ -212,12 +221,10 @@
                             if(is_trust === true) {
                                 system.append("<p>" + "Identification verified... Chat secured!"+"</p>");
                                 smp.hide();
-                                $("#form").show();
                                 exit.show();
                                 $("#changesecret").hide();
                             }else {
                                 system.append("<p>" + "Identification failure... Aborting...!"+"</p>");
-                                $("#form").show();
                             }
                         // smp completed
                         // check data (true|false) and update ui accordingly
@@ -228,7 +235,7 @@
 
                     // smp was aborted. notify the user or update ui
                     default:
-                        system.append("<p>" + "smp abort!"+"</p>");
+                        system.append("<p>" + "Smp abort!"+"</p>");
                         throw new Error('Unknown type.')
                 }
             });
@@ -248,18 +255,20 @@
 
                 // default name is 'Guest'
                 if (secret === '') {
-                    secrete = "defaultSecretUiowa";
+                    secret = "defaultSecretUiowa";
                 }
 
             });
 
             exit.on('click', function(e){
                 $('#encrypted').text("Exited!");
-                buddy.sendMsg("User has exited...");
+                buddy.sendMsg("User has exited...Please restart for next chat!");
                 is_encrypted = false;
                 is_trust = false;
+                is_exited = true;
                 $('#chat').text('');
                 $('#future').text('');
+
             });
 
             buddy.on('status', function (state) {
@@ -316,10 +325,27 @@
                 //prevents form from submitting
                 e.preventDefault();
                 //get and send msg
-                var message = $('#chat_input');
+                if(!is_exited) {
+                    var message = $('#chat_input');
+                    if(is_encrypted&&is_trust) {
+                        if(message.val()!="") {
+                            $('#chat').append("<p>" + "Me: " +  message.val() +  "</p>");
+                            buddy.sendMsg(message.val());
+                        }
+                    }else if(is_encrypted) {
+                        $('#encrypted').append("<p>" + "Socialist millionaire protocol not ready yet!" + "</p>");
+                    }else {
+                        $('#encrypted').append("<p>" + "Please wait for encryption..." + "</p>");
+                    }
 
-                $('#chat').append("<p>" + "Me: " +  message.val() +  "</p>");
-                buddy.sendMsg(message.val());
+                }else {
+                    var okToRefresh = confirm("Please restart for next chat!");
+                    if(okToRefresh) {
+                        window.location = window.location.href;
+                    }
+                }
+
+
                 message.val('');
             });
 
@@ -333,15 +359,17 @@
 <body>
 
   <div class="wrapper">
-      <strong><h1>Secret Agent Chat</h1></strong>
-      <div class = "pull-right" >
-          <button class = "btn btn-danger" id = "exit">
-              Exit
+      <div class = "page-header">
+          <strong><h1>Secret Agent Chat</h1></strong>
+           <button class = "btn btn-danger" id = "exit">
+               Exit
+           </button>
+
+          <button class = "btn btn-primary" id = "changesecret">
+              Change secret
           </button>
       </div>
-      <button class = "btn btn-primary" id = "changesecret">
-          Change secret
-      </button>
+
 
       <div class = "container">
           <p id = "encrypted"></p>
