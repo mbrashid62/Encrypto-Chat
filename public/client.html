@@ -109,10 +109,8 @@
 
         //connect to server
         var socket = io.connect('http://localhost:4200');
-
         var secret = "ghostbusters";
         var is_trust = false;
-
         var is_encrypted = false;
         var is_exited = false;
         var username = "client";
@@ -132,24 +130,19 @@
             smp.hide();
             var exit = $("#exit");
             exit.hide();
-            secret = prompt("Enter connection secret: ", "defaultSecretUiowa");
+            secret = prompt("Enter connection secret: ", "herky4prez");
 
-            // default name is 'Guest'
-            if (secret === '') {
-                secret = "defaultSecretUiowa";
+            if (secret === '') { // default name is 'Guest'
+                secret = "herky4prez";
             }
 
             username = prompt("Enter your username:", "client");
 
-
-
             var buddy = new OTR(options);
-
             var question = "who are you going to call?";
 
-
             buddy.on('io', function (msg, meta) {
-                console.log("message to send to buddy: " + msg)
+                console.log("message to send to buddy: " + msg);
                 socket.emit('messages', msg);
             });
 
@@ -160,115 +153,91 @@
 
             buddy.on('ui', function (msg, encrypted, meta) {
                 console.log("Message to display to the user: " + msg);
-
                 if(encrypted){
                     console.log("Encrypted: " + meta.message);
                 }
 
-                if(msg==="Start pairing..."||msg==="Initiating encryption...") {
+                if (msg === "Confirming identity of the other client..." || msg === "Initiating encryption...") {
                     $('#future').append("<p>" + meta.username + ": " + msg + "</p>");
-                }else if(msg === "User has exited...Please restart for next chat!"){
+                } else if (msg === "User has exited...Please restart for next chat!") {
                     $('#encrypted').append("<p>" + meta.username + ": " + msg + "</p>");
                     $('#future').text('');
                     is_encrypted = false;
                     is_trust =false;
                     is_exited = true;
-
-
-                }else {
-                    if(is_trust&&is_encrypted) {
+                } else {
+                    if( is_trust && is_encrypted) {
                         $('#chat').append("<p>" + meta.username + ": " + msg + "</p>");
                     }
                 }
-
                 // encrypted === true, if the received msg was encrypted
-                // console.log("(optional) with receiveMsg attached meta data: " + meta)
             });
-            debugger;
 
-            var system =  $('#encrypted');
+            var chatStatusBox =  $('#encrypted');
             socket.emit('changeUsername', username);
-
-
-
             socket.on('init', function(msg) {
                 var num = parseInt(msg);
-                if(num===2) {
-                    $('#future').append("<p>" + "Me: Initiating encryption..."+"</p>");
+                if (num===2) {
+                    chatStatusBox.append("<p>" + "Encrypto Chat: We have begun initializing an encrypted TCP connection with the other client."+"</p>");
                     buddy.sendMsg("initiating encryption...");
-                }else if(num ===1){
-                    $('#encrypted').text("Wait for another client...");
+                } else if(num ===1) {
+                    $('#encrypted').text("Security Bot: Waiting for another client");
                 }
             });
 
-
-
             buddy.on('smp', function (type, data, act) {
-
-
                 switch (type) {
                     case 'question':
-                            debugger;
-
                         buddy.smpSecret(secret,question);
                         // call(data) some function with question?
                         // return the user supplied data to
                         // userA.smpSecret(secret)
                         break;
                     case 'trust':
-                            debugger;
                         is_trust = data;
-                            if(is_trust === true) {
-                                system.append("<p>" + "Identification verified... Chat secured!"+"</p>");
-                                smp.hide();
-                                exit.show();
-                                $("#changesecret").hide();
-                            }else {
-                                system.append("<p>" + "Identification failure... Aborting...!"+"</p>");
-                            }
+                        if(is_trust === true) {
+                            chatStatusBox.append("<p>" + "Identification verified. No packets were intercepted during connection. This chat is secured!"+"</p>");
+                            smp.hide();
+                            exit.show();
+                            $("#changesecret").hide();
+                        }else {
+                            chatStatusBox.append("<p>" + "Identification failure. We could not verify the other client's identity. Aborting!"+"</p>");
+                        }
                         // smp completed
                         // check data (true|false) and update ui accordingly
                         // act ("asked"|"answered") provides info one who initiated the smp
                         break;
                     case 'abort':
                         is_trust = false;
-
-                    // smp was aborted. notify the user or update ui
+                        // smp was aborted. notify the user or update ui
                     default:
-                        system.append("<p>" + "Smp abort!"+"</p>");
+                        chatStatusBox.append("<p>" + "Smp abort!"+"</p>");
                         throw new Error('Unknown type.')
                 }
             });
 
 
             smp.on('click', function(e){
-
-                $('#future').append("<p>" + "Me: Start pairing..."+"</p>");
-                buddy.sendMsg("Start pairing...");
+                chatStatusBox.append("<p>" + "Security Bot: We are now confirming the identity of other client."+"</p>");
+                buddy.sendMsg("Security Bot: We are now confirming the identity of other client.");
                 buddy.smpSecret(secret);
-
             });
 
             $('#changesecret').on('click', function(e){
-
-                secret = prompt("Re-enter connection secret: ", "defaultSecretUiowa");
-
-                // default name is 'Guest'
-                if (secret === '') {
-                    secret = "defaultSecretUiowa";
+                secret = prompt("Re-enter connection secret: ", "herky4prez");
+                if (secret === '') { // default name is 'Guest'
+                    secret = "herky4prez";
                 }
-
             });
 
             exit.on('click', function(e){
                 $('#encrypted').text("Exited!");
-                buddy.sendMsg("User has exited...Please restart for next chat!");
+                buddy.sendMsg("User has exited...Please reload your browser for a new chat session");
                 is_encrypted = false;
                 is_trust = false;
                 is_exited = true;
                 $('#chat').text('');
                 $('#future').text('');
-
             });
 
             buddy.on('status', function (state) {
@@ -278,7 +247,7 @@
                         // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
                         if(buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED){
                             console.log("message is now encrypted");
-                            $("#encrypted").text("Now encrypted!");
+                            $("#encrypted").text("This chat is now encrypted!");
                             exit.hide();
                             is_encrypted = true;
                             smp.show();
@@ -294,108 +263,88 @@
             });
 
             buddy.REQUIRE_ENCRYPTION = true;
-            //buddy.sendMsg('My plaintext message to be encrypted.');
-
 
             //on connect...
             socket.on('connect', function(data) {
-                //socket.emit('join', 'Hello World from client');
-
             });
-
 
             //when msgs are received
             socket.on('messages', function(data){
                 //populate p element with text
-
                 $('#chat').text(data);
             });
 
             //on broadcast...server sends message to all connected clients
             socket.on('broad', function(data) {
-
                 buddy.receiveMsg(data.message, data);
             });
 
-
-
             //when client sends msg...
             $('form').submit(function(e){
-
                 //prevents form from submitting
                 e.preventDefault();
                 //get and send msg
-                if(!is_exited) {
+                if (!is_exited) {
                     var message = $('#chat_input');
-                    if(is_encrypted&&is_trust) {
-                        if(message.val()!="") {
+                    if (is_encrypted&&is_trust) {
+                        if (message.val()!="") {
                             $('#chat').append("<p>" + "Me: " +  message.val() +  "</p>");
                             buddy.sendMsg(message.val());
                         }
-                    }else if(is_encrypted) {
+                    } else if(is_encrypted) {
                         $('#encrypted').append("<p>" + "Socialist millionaire protocol not ready yet!" + "</p>");
-                    }else {
+                    } else {
                         $('#encrypted').append("<p>" + "Please wait for encryption..." + "</p>");
                     }
 
-                }else {
+                } else {
                     var okToRefresh = confirm("Please restart for next chat!");
-                    if(okToRefresh) {
+                    if (okToRefresh) {
                         window.location = window.location.href;
                     }
                 }
-
-
                 message.val('');
             });
-
         });
-
-
     </script>
-
 </head>
 
 <body>
 
-  <div class="wrapper">
-      <div class = "page-header">
-          <strong><h1>Secret Agent Chat</h1></strong>
-           <button class = "btn btn-danger" id = "exit">
-               Exit
-           </button>
+<div class="wrapper">
+    <div class = "page-header">
+        <strong><h1>Secret Agent Chat</h1></strong>
+        <button class = "btn btn-danger" id = "exit">
+            Exit
+        </button>
 
-          <button class = "btn btn-primary" id = "changesecret">
-              Change secret
-          </button>
-      </div>
-
-
-      <div class = "container">
-          <p id = "encrypted"></p>
-          <div id="future">
-
-          </div>
-          <button class = "btn btn-success" id = "smp_button">
-              Initiate SMP Protocol
-          </button>
-
-          <p id = "chat">
-
-          </p>
+        <button class = "btn btn-primary" id = "changesecret">
+            Change secret
+        </button>
+    </div>
 
 
-          <form id="form" id="chat_form">
-              <input id="chat_input" type="text" placeholder='type your message here'>
-              <input type="submit" value="Send">
-          </form>
+    <div class = "container">
+        <p id = "encrypted"></p>
+        <div id="future">
 
-      </div>
-  </div>
+        </div>
+        <button class = "btn btn-success" id = "smp_button">
+            Initiate SMP Protocol
+        </button>
 
+        <p id = "chat">
+        </p>
 
+        <form id="form" id="chat_form">
+            <input id="chat_input" type="text" placeholder='type your message here'>
+            <input type="submit" value="Send">
+        </form>
 
-   <script src="/socket.io/socket.io.js"></script>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
 </body>
 
 </html>
