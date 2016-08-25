@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Encryption Chat</title>
+    <title>Encrypto Chat</title>
     <!--<script src="scripts/test.js"></script>-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
     <!-- Load dependencies -->
@@ -19,6 +19,10 @@
     </script>
 
     <style>
+
+        body{
+            background-color: #666666;
+        }
         .container {
             width:800px;
             height: 80%;
@@ -37,23 +41,27 @@
         }
 
         h1{
+            font-family: 'Tahoma', 'sans-serif';
             text-align: center;
             padding: 15px;
+            color: #ddd;
+        }
+        #headerBlock {
+            background-color: #666666;
+            border-bottom: 1px #ccc solid;
         }
 
-        p{
+        p {
             font-size: 22px;
         }
-        #encrypted, #future{
+        #encrypted{
 
             height:60px;
             border-bottom:1px solid #ddd;
             overflow-y:scroll;
             color: black;
             background-color: white;
-            font-size: x-large;
-            font-family: cursive;
-            font-weight: 600;
+            font-family: 'Tahoma', 'sans-serif';
             margin-left: 15px;
             margin-right: 15px;
 
@@ -64,28 +72,55 @@
             height:500px;
             border-bottom:1px solid #ddd;
             overflow-y:scroll;
-            color: green;
-            background-color: whitesmoke;
-            font-size: large;
-            font-family: cursive;
-            font-weight: 600;
 
         }
+
+        #chat p{
+            color: darkgreen;
+            padding: 15px;
+            background-color: whitesmoke;
+            font-family: 'Tahoma', 'sans-serif';
+        }
         #smp_button{
-            padding-left:50px;
-            width:100%;
+            padding: 10px 30px;
+            margin: 20px;
+            font-family: 'Tahoma', 'sans-serif';
+        }
+
+        #changeSecretBtn{
+            padding: 10px 30px;
+            margin: 10px;
+            font-family: 'Tahoma', 'sans-serif';
+        }
+
+        #exitBtn{
+            padding: 10px 30px;
+            margin: 10px;
+            margin-left: 52px;
+            font-family: 'Tahoma', 'sans-serif';
+        }
+
+        #chatStatusBox{
+            margin: 20px;
+        }
+
+        #chatStatusBox p {
+            margin: 15px;
+            padding:15px;
+            height: 100%;
         }
 
 
         body { font: 13px Helvetica, Arial; }
         form {
             width: auto;
-            padding:3px;
-            padding-left:10px;
-            border:1px solid #ddd;
-            border-radius:5px;
-            margin:5px;
+            padding: 3px;
+            padding-left: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px;
             height: 70px;
+            font-family: 'Tahoma', 'sans-serif';
         }
         form input {
             width:48%;
@@ -157,15 +192,13 @@
                     console.log("Encrypted: " + meta.message);
                 }
 
-                if (msg === "Confirming identity of the other client..." || msg === "Initiating encryption...") {
-                    $('#future').append("<p>" + meta.username + ": " + msg + "</p>");
-                } else if (msg === "User has exited...Please restart for next chat!") {
+                if (msg === "User has exited...Please restart for next chat!") {
                     $('#encrypted').append("<p>" + meta.username + ": " + msg + "</p>");
-                    $('#future').text('');
+                    $('#chat').text('');
                     is_encrypted = false;
                     is_trust =false;
                     is_exited = true;
-                } else {
+                } else { // if succesful
                     if( is_trust && is_encrypted) {
                         $('#chat').append("<p>" + meta.username + ": " + msg + "</p>");
                     }
@@ -199,7 +232,7 @@
                             chatStatusBox.append("<p>" + "Identification verified. No packets were intercepted during connection. This chat is secured!"+"</p>");
                             smp.hide();
                             exit.show();
-                            $("#changesecret").hide();
+                            $("#changeSecretBtn").hide();
                         }else {
                             chatStatusBox.append("<p>" + "Identification failure. We could not verify the other client's identity. Aborting!"+"</p>");
                         }
@@ -223,7 +256,7 @@
                 buddy.smpSecret(secret);
             });
 
-            $('#changesecret').on('click', function(e){
+            $('#changeSecretBtn').on('click', function(e){
                 secret = prompt("Re-enter connection secret: ", "herky4prez");
                 if (secret === '') { // default name is 'Guest'
                     secret = "herky4prez";
@@ -237,7 +270,6 @@
                 is_trust = false;
                 is_exited = true;
                 $('#chat').text('');
-                $('#future').text('');
             });
 
             buddy.on('status', function (state) {
@@ -312,24 +344,25 @@
 <body>
 
 <div class="wrapper">
-    <div class = "page-header">
-        <strong><h1>Secret Agent Chat</h1></strong>
-        <button class = "btn btn-danger" id = "exit">
+    <div id="headerBlock">
+        <strong><h1>Welcome to Encrypto Chat</h1></strong>
+        <button class="btn btn-danger" id="exitBtn">
             Exit
         </button>
 
-        <button class = "btn btn-primary" id = "changesecret">
+        <button class = "btn btn-primary" id="changeSecretBtn">
             Change secret
         </button>
     </div>
 
 
     <div class = "container">
-        <p id = "encrypted"></p>
-        <div id="future">
 
+        <div id="chatStatusBox">
+            <p id = "encrypted"></p>
         </div>
-        <button class = "btn btn-success" id = "smp_button">
+
+        <button class="btn btn-success" id="smp_button">
             Initiate SMP Protocol
         </button>
 
@@ -337,7 +370,7 @@
         </p>
 
         <form id="form" id="chat_form">
-            <input id="chat_input" type="text" placeholder='type your message here'>
+            <input id="chat_input" type="text" placeholder='Type your message here'>
             <input type="submit" value="Send">
         </form>
 
